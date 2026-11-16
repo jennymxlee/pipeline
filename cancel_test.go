@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -15,9 +16,12 @@ func TestCancel(t *testing.T) {
 
 	const testDuration = time.Second
 
-	// Collect logs
+	// Collect logs from the producer, the cancel func and the reader, which run concurrently
 	var logs []string
+	var logsMu sync.Mutex
 	logf := func(v string, is ...interface{}) {
+		logsMu.Lock()
+		defer logsMu.Unlock()
 		logs = append(logs, fmt.Sprintf(v, is...))
 	}
 
