@@ -83,8 +83,8 @@ After the context is canceled, everything from `in <-chan Item` is sent to the `
 ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 defer cancel()
 
-// Create a basic pipeline that emits one int every 250ms
-p := pipeline.Delay(ctx, time.Second/4,
+// Create a basic pipeline that emits one int every 300ms
+p := pipeline.Delay(ctx, 300*time.Millisecond,
     pipeline.Emit(1, 2, 3, 4, 5),
 )
 
@@ -232,8 +232,8 @@ It passes []Input batches of inputs to the `Processor.Cancel` method.
 If the receiver is backed up, ProcessBatch can holds up to 2x maxSize.
 
 ```golang
-// Create a context that times out after 5 seconds
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// Create a context that times out after 4.5 seconds, between the 5th and 6th ints
+ctx, cancel := context.WithTimeout(context.Background(), 4500*time.Millisecond)
 defer cancel()
 
 // Create a pipeline that emits 1-6 at a rate of one int per second

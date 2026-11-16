@@ -9,8 +9,8 @@ import (
 )
 
 func ExampleProcessBatch() {
-	// Create a context that times out after 5 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Create a context that times out after 4.5 seconds, between the 5th and 6th ints
+	ctx, cancel := context.WithTimeout(context.Background(), 4500*time.Millisecond)
 	defer cancel()
 
 	// Create a pipeline that emits 1-6 at a rate of one int per second
