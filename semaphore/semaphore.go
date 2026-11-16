@@ -1,28 +1,27 @@
-// package semaphore is like a sync.WaitGroup with an upper limit.
+// Package semaphore is like a sync.WaitGroup with an upper limit.
 // It's useful for limiting concurrent operations.
 //
-// Example Usage
+// # Example Usage
 //
-//  // startMultiplying is a pipeline step that concurrently multiplies input numbers by a factor
-//  func startMultiplying(concurrency, factor int, in <-chan int) <-chan int {
-//  	out := make(chan int)
-//  	go func() {
-//   		sem := semaphore.New(concurrency)
-//   		for i := range in {
-//   			// Multiply up to 'concurrency' inputs at once
-//   			sem.Add(1)
-//   			go func() {
-//   				out <- factor * i
-//   				sem.Done()
-//   			}()
-//   		}
-//   		// Wait for all multiplications to finish before closing the output chan
-//   		sem.Wait()
-//   		close(out)
-//  	}()
-//  	return out
-//  }
-//
+//	// startMultiplying is a pipeline step that concurrently multiplies input numbers by a factor
+//	func startMultiplying(concurrency, factor int, in <-chan int) <-chan int {
+//		out := make(chan int)
+//		go func() {
+//			sem := semaphore.New(concurrency)
+//			for i := range in {
+//				// Multiply up to 'concurrency' inputs at once
+//				sem.Add(1)
+//				go func() {
+//					out <- factor * i
+//					sem.Done()
+//				}()
+//			}
+//			// Wait for all multiplications to finish before closing the output chan
+//			sem.Wait()
+//			close(out)
+//		}()
+//		return out
+//	}
 package semaphore
 
 // Semaphore is like a sync.WaitGroup, except it has a maximum
@@ -31,10 +30,10 @@ package semaphore
 type Semaphore chan struct{}
 
 // New returns a new Semaphore
-func New(max int) Semaphore {
+func New(limit int) Semaphore {
 	// There are probably more memory efficient ways to implement
 	// a semaphore using runtime primitives like runtime_SemacquireMutex
-	return make(Semaphore, max)
+	return make(Semaphore, limit)
 }
 
 // Add adds delta, which may be negative, to the semaphore buffer.

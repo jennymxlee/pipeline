@@ -5,46 +5,53 @@ on: push
 jobs:
   lint:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v7
         with:
-          go-version: 1.18
+          go-version: stable
 
       - name: Lint
-        if: always()
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
-          version: v1.45
+          version: v2.15
 
   test:
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    strategy:
+      matrix:
+        # oldstable and stable are the two Go releases currently supported by the Go team
+        go-version: [oldstable, stable]
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v7
         with:
-          go-version: 1.18
+          go-version: ${{ matrix.go-version }}
 
       - name: Test
         run: go test -coverprofile=coverage.txt -json ./... > test.json
 
       - name: Annotate tests
         if: always()
-        uses: guyarb/golang-test-annoations@v0.3.0
+        uses: guyarb/golang-test-annoations@v0.9.0
         with:
           test-results: test.json
-    
+
+      # Codecov requires a token; skip the upload when the CODECOV_TOKEN secret isn't configured
       - name: Report coverage
-        uses: codecov/codecov-action@v1
+        if: matrix.go-version == 'stable' && env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v7
         with:
-          file: coverage.txt
+          files: coverage.txt
+          token: ${{ env.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
   build:
@@ -52,12 +59,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v7
         with:
-          go-version: 1.18
+          go-version: stable
 
       - name: Build
         run: go build -v ./...
@@ -67,7 +74,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #   - name: Check out repository
-  #     uses: actions/checkout@v2
+  #     uses: actions/checkout@v7
   #   - name: Update readme according to Go doc
   #     uses: posener/goreadme
   #     with:
@@ -86,25 +93,26 @@ jobs:
     # needs: docs
     if: github.ref == 'refs/heads/main' # only version on push to master
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v7
 
       - name: Conventional Commits Versioning + Changelog
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v6
         with:
           github-token: ${{ secrets.github_token }}
           skip-version-file: true
           output-file: false
           skip-commit: true
-      
+
       - name: Tag + Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.github_token }}
         with:
+          token: ${{ secrets.github_token }}
           tag_name: ${{ steps.changelog.outputs.tag }}
-          release_name: ${{ steps.changelog.outputs.tag }}
+          name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}

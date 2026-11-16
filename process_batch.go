@@ -42,7 +42,8 @@ func ProcessBatchConcurrently[Input, Output any](
 ) <-chan Output {
 	// Create the out chan
 	out := make(chan Output)
-	go func() {
+	// lctx only stops the batch loop once in is closed; it must outlive ctx so canceled batches are still drained.
+	go func() { //nolint:gosec // see above
 		// Perform Process concurrently times
 		sem := semaphore.New(concurrently)
 		lctx, done := context.WithCancel(context.Background())
