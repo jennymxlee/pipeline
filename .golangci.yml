@@ -1,12 +1,20 @@
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
-    - gofmt
-    - revive
+    - gosec
     - govet
     - misspell
-    - deadcode
-    - gosec
-linters-settings:
-  misspell:
-    locale: US
+    - revive
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+formatters:
+  enable:
+    - gofmt
