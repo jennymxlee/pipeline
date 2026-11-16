@@ -326,16 +326,16 @@ func Test_processBatch(t *testing.T) {
 				t.Errorf("open = %t, wanted %t", open, tt.want.open)
 			}
 			// Expecting processed inputs
-			if !reflect.DeepEqual(tt.args.processor.processed, tt.want.processed) {
-				t.Errorf("processed = %+v, want %+v", tt.args.processor.processed, tt.want.processed)
+			if !reflect.DeepEqual(tt.args.processor.Processed(), tt.want.processed) {
+				t.Errorf("processed = %+v, want %+v", tt.args.processor.Processed(), tt.want.processed)
 			}
 			// Expecting canceled inputs
-			if !reflect.DeepEqual(tt.args.processor.canceled, tt.want.canceled) {
-				t.Errorf("canceled = %+v, want %+v", tt.args.processor.canceled, tt.want.canceled)
+			if !reflect.DeepEqual(tt.args.processor.Canceled(), tt.want.canceled) {
+				t.Errorf("canceled = %+v, want %+v", tt.args.processor.Canceled(), tt.want.canceled)
 			}
 			// Expecting canceled errors
-			if !reflect.DeepEqual(tt.args.processor.errs, tt.want.errs) {
-				t.Errorf("errs = %+v, want %+v", tt.args.processor.errs, tt.want.errs)
+			if !reflect.DeepEqual(tt.args.processor.Errs(), tt.want.errs) {
+				t.Errorf("errs = %+v, want %+v", tt.args.processor.Errs(), tt.want.errs)
 			}
 		})
 	}
