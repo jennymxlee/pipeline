@@ -21,6 +21,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     strategy:
       matrix:
         # oldstable and stable are the two Go releases currently supported by the Go team
@@ -43,12 +45,13 @@ jobs:
         with:
           test-results: test.json
 
+      # Codecov requires a token; skip the upload when the CODECOV_TOKEN secret isn't configured
       - name: Report coverage
-        if: matrix.go-version == 'stable'
+        if: matrix.go-version == 'stable' && env.CODECOV_TOKEN != ''
         uses: codecov/codecov-action@v7
         with:
           files: coverage.txt
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ env.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
   build:
