@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -81,4 +82,22 @@ func TestCancel(t *testing.T) {
 		}
 	}
 
+}
+
+func TestCancel_inputClosedBeforeContextCanceled(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	canceled := make(chan int, 3)
+	out := Cancel(ctx, func(i int, _ error) { canceled <- i }, Emit(1, 2, 3))
+
+	want := []int{1, 2, 3}
+	if got := readAll(t, out); !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+	if len(canceled) != 0 {
+		t.Errorf("%d items were canceled, want none", len(canceled))
+	}
 }

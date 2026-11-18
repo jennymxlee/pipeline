@@ -2,7 +2,9 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"testing"
 )
@@ -29,7 +31,7 @@ func TestJoin(t *testing.T) {
 	}
 }
 
-func JoinExample() {
+func ExampleJoin() {
 	// Emit 10 numbers
 	inputs := Emit(0, 1, 2, 3, 4, 5)
 	// Join two steps, one that converts the number to a string, the other that converts it back to a number
@@ -49,4 +51,61 @@ func JoinExample() {
 	// 3
 	// 4
 	// 5
+}
+
+func TestJoin_errors(t *testing.T) {
+	t.Parallel()
+
+	t.Run("cancels the input of the first processor when it fails", func(t *testing.T) {
+		t.Parallel()
+
+		a := &recorder[int, string]{process: func(int) (string, error) { return "", errTest }}
+		b := &recorder[string, int]{process: strconv.Atoi}
+
+		got, err := Join[int, string, int](a, b).Process(context.Background(), 7)
+		if !errors.Is(err, errTest) {
+			t.Fatalf("err = %v, want %v", err, errTest)
+		}
+		if got != 0 {
+			t.Errorf("output = %d, want 0", got)
+		}
+		if !slices.Equal(a.canceled, []int{7}) || !errors.Is(a.errs[0], errTest) {
+			t.Errorf("first processor canceled %v with %v, want [7] with %v", a.canceled, a.errs, errTest)
+		}
+		if len(b.inputs) != 0 {
+			t.Errorf("second processor was called with %v, want it not called", b.inputs)
+		}
+	})
+
+	t.Run("cancels the input of the second processor when it fails", func(t *testing.T) {
+		t.Parallel()
+
+		a := &recorder[int, string]{process: func(i int) (string, error) { return strconv.Itoa(i), nil }}
+		b := &recorder[string, int]{process: func(string) (int, error) { return 99, errTest }}
+
+		got, err := Join[int, string, int](a, b).Process(context.Background(), 7)
+		if !errors.Is(err, errTest) {
+			t.Fatalf("err = %v, want %v", err, errTest)
+		}
+		if got != 0 {
+			t.Errorf("output = %d, want 0", got)
+		}
+		if len(a.canceled) != 0 {
+			t.Errorf("first processor canceled %v, want nothing canceled", a.canceled)
+		}
+		if !slices.Equal(b.canceled, []string{"7"}) || !errors.Is(b.errs[0], errTest) {
+			t.Errorf("second processor canceled %v with %v, want [7] with %v", b.canceled, b.errs, errTest)
+		}
+	})
+
+	t.Run("Cancel does not call the joined processors", func(t *testing.T) {
+		t.Parallel()
+
+		a := &recorder[int, string]{}
+		b := &recorder[string, int]{}
+		Join[int, string, int](a, b).Cancel(7, errTest)
+		if len(a.canceled) != 0 || len(b.canceled) != 0 {
+			t.Errorf("canceled %v and %v, want nothing canceled", a.canceled, b.canceled)
+		}
+	})
 }
