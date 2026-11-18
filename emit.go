@@ -2,7 +2,7 @@ package pipeline
 
 import "context"
 
-// Emit fans `is ...Item` out to a `<-chan Item`
+// Emit fans `is ...Item`` out to a `<-chan Item`
 func Emit[Item any](is ...Item) <-chan Item {
 	out := make(chan Item)
 	go func() {

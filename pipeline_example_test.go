@@ -22,7 +22,7 @@ func Example_pipelineShutsDownOnError() {
 	p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 	// A step that will shutdown the pipeline if the number is greater than 1
-	p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+	p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
 		// Shut down the pipeline by canceling the context
 		if i != 1 {
 			cancel()
@@ -66,7 +66,7 @@ func Example_pipelineShutsDownWhenInputChannelIsClosed() {
 	p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 	// Multiply every number by 2
-	p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+	p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
 		return i * 2, nil
 	}, func(i int, err error) {
 		fmt.Printf("could not multiply %d: %s\n", i, err)
@@ -109,7 +109,7 @@ func Example_pipelineShutsDownWhenContainerIsKilled() {
 	})
 
 	// Filter out only even numbers
-	p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+	p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
 		if i%2 == 0 {
 			return i, nil
 		}

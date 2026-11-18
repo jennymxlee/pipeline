@@ -15,7 +15,7 @@ func (j *join[A, B, C]) Process(ctx context.Context, a A) (C, error) {
 	} else if c, err := j.b.Process(ctx, b); err != nil {
 		j.b.Cancel(b, err)
 		return zero, err
-	} else { //nolint:revive // keeps b and c scoped to the if chain
+	} else {
 		return c, nil
 	}
 }

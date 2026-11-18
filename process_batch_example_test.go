@@ -9,15 +9,15 @@ import (
 )
 
 func ExampleProcessBatch() {
-	// Create a context that times out after 4.5 seconds, between the 5th and 6th ints
-	ctx, cancel := context.WithTimeout(context.Background(), 4500*time.Millisecond)
+	// Create a context that times out after 5 seconds
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Create a pipeline that emits 1-6 at a rate of one int per second
 	p := pipeline.Delay(ctx, time.Second, pipeline.Emit(1, 2, 3, 4, 5, 6))
 
 	// Multiply every 2 adjacent numbers together
-	p = pipeline.ProcessBatch(ctx, 2, time.Minute, pipeline.NewProcessor(func(_ context.Context, is []int) ([]int, error) {
+	p = pipeline.ProcessBatch(ctx, 2, time.Minute, pipeline.NewProcessor(func(ctx context.Context, is []int) ([]int, error) {
 		o := 1
 		for _, i := range is {
 			o *= i
@@ -50,7 +50,7 @@ func ExampleProcessBatchConcurrently() {
 	p = pipeline.Delay(ctx, time.Second, p)
 
 	// Group two inputs at a time
-	p = pipeline.ProcessBatchConcurrently(ctx, 2, 2, time.Minute, pipeline.NewProcessor(func(_ context.Context, ins []int) ([]int, error) {
+	p = pipeline.ProcessBatchConcurrently(ctx, 2, 2, time.Minute, pipeline.NewProcessor(func(ctx context.Context, ins []int) ([]int, error) {
 		return ins, nil
 	}, func(i []int, err error) {
 		fmt.Printf("error: could not process %v, %s\n", i, err)

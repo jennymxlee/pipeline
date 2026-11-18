@@ -271,11 +271,9 @@ func Test_processBatch(t *testing.T) {
 			maxSize:     1,
 			maxDuration: maxTestDuration,
 			processor: &mockProcessor[[]int]{
-				// Timings keep every step tens of ms away from the ctx deadline (500ms) and test timeout (1s):
-				// Process {1}-{4} finish at 440ms, {5} is cut off by the deadline,
-				// then Cancel {5}-{8} start at 500, 640, 780 and 920ms, and {9} would start after 1s.
-				processDuration: maxTestDuration/10 + 10*time.Millisecond,
-				cancelDuration:  maxTestDuration/10 + 40*time.Millisecond,
+				// this will take longer to complete than the maxTestDuration by a few micro seconds
+				processDuration: maxTestDuration / 10,                     // 5 calls to Process > maxTestDuration / 2
+				cancelDuration:  maxTestDuration/10 + 25*time.Millisecond, // 5 calls to Cancel >  maxTestDuration / 2
 			},
 			in:  Emit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
 			out: drain,
@@ -326,16 +324,16 @@ func Test_processBatch(t *testing.T) {
 				t.Errorf("open = %t, wanted %t", open, tt.want.open)
 			}
 			// Expecting processed inputs
-			if !reflect.DeepEqual(tt.args.processor.Processed(), tt.want.processed) {
-				t.Errorf("processed = %+v, want %+v", tt.args.processor.Processed(), tt.want.processed)
+			if !reflect.DeepEqual(tt.args.processor.processed, tt.want.processed) {
+				t.Errorf("processed = %+v, want %+v", tt.args.processor.processed, tt.want.processed)
 			}
 			// Expecting canceled inputs
-			if !reflect.DeepEqual(tt.args.processor.Canceled(), tt.want.canceled) {
-				t.Errorf("canceled = %+v, want %+v", tt.args.processor.Canceled(), tt.want.canceled)
+			if !reflect.DeepEqual(tt.args.processor.canceled, tt.want.canceled) {
+				t.Errorf("canceled = %+v, want %+v", tt.args.processor.canceled, tt.want.canceled)
 			}
 			// Expecting canceled errors
-			if !reflect.DeepEqual(tt.args.processor.Errs(), tt.want.errs) {
-				t.Errorf("errs = %+v, want %+v", tt.args.processor.Errs(), tt.want.errs)
+			if !reflect.DeepEqual(tt.args.processor.errs, tt.want.errs) {
+				t.Errorf("errs = %+v, want %+v", tt.args.processor.errs, tt.want.errs)
 			}
 		})
 	}

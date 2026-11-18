@@ -13,8 +13,8 @@ func ExampleCancel() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Create a basic pipeline that emits one int every 300ms
-	p := pipeline.Delay(ctx, 300*time.Millisecond,
+	// Create a basic pipeline that emits one int every 250ms
+	p := pipeline.Delay(ctx, time.Second/4,
 		pipeline.Emit(1, 2, 3, 4, 5),
 	)
 

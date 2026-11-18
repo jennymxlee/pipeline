@@ -150,13 +150,13 @@ func TestProcess(t *testing.T) {
 			}
 
 			// Expecting canceled inputs
-			if !reflect.DeepEqual(test.want.canceled, processor.Canceled()) {
-				t.Errorf("%+v != %+v", test.want.canceled, processor.Canceled())
+			if !reflect.DeepEqual(test.want.canceled, processor.canceled) {
+				t.Errorf("%+v != %+v", test.want.canceled, processor.canceled)
 			}
 
 			// Expecting canceled errors
-			if !reflect.DeepEqual(test.want.canceledErrs, processor.Errs()) {
-				t.Errorf("%+v != %+v", test.want.canceledErrs, processor.Errs())
+			if !reflect.DeepEqual(test.want.canceledErrs, processor.errs) {
+				t.Errorf("%+v != %+v", test.want.canceledErrs, processor.errs)
 			}
 		})
 	}
@@ -304,13 +304,13 @@ func TestProcessConcurrently(t *testing.T) {
 			}
 
 			// Expecting canceled inputs
-			if !containsAll(test.want.canceled, processor.Canceled()) {
-				t.Errorf("canceled = %+v, want %+v", processor.Canceled(), test.want.canceled)
+			if !containsAll(test.want.canceled, processor.canceled) {
+				t.Errorf("canceled = %+v, want %+v", processor.canceled, test.want.canceled)
 			}
 
 			// Expecting canceled errors
-			if !containsAll(test.want.canceledErrs, processor.Errs()) {
-				t.Errorf("canceledErrs = %+v, want %+v", processor.Errs(), test.want.canceledErrs)
+			if !containsAll(test.want.canceledErrs, processor.errs) {
+				t.Errorf("canceledErrs = %+v, want %+v", processor.errs, test.want.canceledErrs)
 			}
 		})
 	}

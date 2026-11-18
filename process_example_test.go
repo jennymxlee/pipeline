@@ -18,7 +18,7 @@ func ExampleProcess() {
 	p := pipeline.Delay(ctx, time.Second, pipeline.Emit(1, 2, 3, 4, 5, 6))
 
 	// Multiply each number by 10
-	p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, in int) (int, error) {
+	p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, in int) (int, error) {
 		return in * 10, nil
 	}, func(i int, err error) {
 		fmt.Printf("error: could not multiply %v, %s\n", i, err)
@@ -50,7 +50,7 @@ func ExampleProcessConcurrently() {
 	p = pipeline.Delay(ctx, 2*time.Second, p)
 
 	// Add two concurrent processors that pass input numbers to the output
-	p = pipeline.ProcessConcurrently(ctx, 2, pipeline.NewProcessor(func(_ context.Context, in int) (int, error) {
+	p = pipeline.ProcessConcurrently(ctx, 2, pipeline.NewProcessor(func(ctx context.Context, in int) (int, error) {
 		return in, nil
 	}, func(i int, err error) {
 		fmt.Printf("error: could not process %v, %s\n", i, err)

@@ -83,8 +83,8 @@ After the context is canceled, everything from `in <-chan Item` is sent to the `
 ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 defer cancel()
 
-// Create a basic pipeline that emits one int every 300ms
-p := pipeline.Delay(ctx, 300*time.Millisecond,
+// Create a basic pipeline that emits one int every 250ms
+p := pipeline.Delay(ctx, time.Second/4,
     pipeline.Emit(1, 2, 3, 4, 5),
 )
 
@@ -136,7 +136,7 @@ Drain empties the input and blocks until the channel is closed
 
 `func Emit[Item any](is ...Item) <-chan Item`
 
-Emit fans `is ...Item` out to a `<-chan Item`
+Emit fans `is ...Item`` out to a `<-chan Item`
 
 ### func [Emitter](/emit.go#L19)
 
@@ -193,7 +193,7 @@ defer cancel()
 p := pipeline.Delay(ctx, time.Second, pipeline.Emit(1, 2, 3, 4, 5, 6))
 
 // Multiply each number by 10
-p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, in int) (int, error) {
+p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, in int) (int, error) {
     return in * 10, nil
 }, func(i int, err error) {
     fmt.Printf("error: could not multiply %v, %s\n", i, err)
@@ -232,15 +232,15 @@ It passes []Input batches of inputs to the `Processor.Cancel` method.
 If the receiver is backed up, ProcessBatch can holds up to 2x maxSize.
 
 ```golang
-// Create a context that times out after 4.5 seconds, between the 5th and 6th ints
-ctx, cancel := context.WithTimeout(context.Background(), 4500*time.Millisecond)
+// Create a context that times out after 5 seconds
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
 // Create a pipeline that emits 1-6 at a rate of one int per second
 p := pipeline.Delay(ctx, time.Second, pipeline.Emit(1, 2, 3, 4, 5, 6))
 
 // Multiply every 2 adjacent numbers together
-p = pipeline.ProcessBatch(ctx, 2, time.Minute, pipeline.NewProcessor(func(_ context.Context, is []int) ([]int, error) {
+p = pipeline.ProcessBatch(ctx, 2, time.Minute, pipeline.NewProcessor(func(ctx context.Context, is []int) ([]int, error) {
     o := 1
     for _, i := range is {
         o *= i
@@ -290,7 +290,7 @@ p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7, 8, 9)
 p = pipeline.Delay(ctx, time.Second, p)
 
 // Group two inputs at a time
-p = pipeline.ProcessBatchConcurrently(ctx, 2, 2, time.Minute, pipeline.NewProcessor(func(_ context.Context, ins []int) ([]int, error) {
+p = pipeline.ProcessBatchConcurrently(ctx, 2, 2, time.Minute, pipeline.NewProcessor(func(ctx context.Context, ins []int) ([]int, error) {
     return ins, nil
 }, func(i []int, err error) {
     fmt.Printf("error: could not process %v, %s\n", i, err)
@@ -333,7 +333,7 @@ p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7)
 p = pipeline.Delay(ctx, 2*time.Second, p)
 
 // Add two concurrent processors that pass input numbers to the output
-p = pipeline.ProcessConcurrently(ctx, 2, pipeline.NewProcessor(func(_ context.Context, in int) (int, error) {
+p = pipeline.ProcessConcurrently(ctx, 2, pipeline.NewProcessor(func(ctx context.Context, in int) (int, error) {
     return in, nil
 }, func(i int, err error) {
     fmt.Printf("error: could not process %v, %s\n", i, err)
@@ -379,7 +379,7 @@ defer cancel()
 p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 // A step that will shutdown the pipeline if the number is greater than 1
-p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
     // Shut down the pipeline by canceling the context
     if i != 1 {
         cancel()
@@ -434,7 +434,7 @@ p := pipeline.Emitter(ctx, func() int {
 })
 
 // Filter out only even numbers
-p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
     if i%2 == 0 {
         return i, nil
     }
@@ -485,7 +485,7 @@ defer cancel()
 p := pipeline.Emit(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
 
 // Multiply every number by 2
-p = pipeline.Process(ctx, pipeline.NewProcessor(func(_ context.Context, i int) (int, error) {
+p = pipeline.Process(ctx, pipeline.NewProcessor(func(ctx context.Context, i int) (int, error) {
     return i * 2, nil
 }, func(i int, err error) {
     fmt.Printf("could not multiply %d: %s\n", i, err)

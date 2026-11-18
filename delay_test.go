@@ -49,10 +49,8 @@ func TestDelay(t *testing.T) {
 	}, {
 		name: "out is delayed by duration",
 		args: args{
-			// The context must outlive the test timeout, and the 5th item (at 4*duration)
-			// must land well after it, so the result doesn't depend on which timer fires first.
-			ctxTimeout: 2 * maxTestDuration,
-			duration:   3 * maxTestDuration / 10,
+			ctxTimeout: maxTestDuration,
+			duration:   maxTestDuration / 4,
 			in:         []int{1, 2, 3, 4, 5},
 		},
 		want: want{

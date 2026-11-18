@@ -3,8 +3,6 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"slices"
-	"sync"
 	"time"
 )
 
@@ -16,8 +14,6 @@ type mockProcessor[Item any] struct {
 	processed          []Item
 	canceled           []Item
 	errs               []string
-	// mu guards processed, canceled and errs, which concurrent processors append to
-	mu sync.Mutex
 }
 
 // Process waits processDuration before returning its input as its output
@@ -32,8 +28,6 @@ func (m *mockProcessor[Item]) Process(ctx context.Context, i Item) (Item, error)
 	if m.processReturnsErrs {
 		return zero, fmt.Errorf("process error: %v", i)
 	}
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.processed = append(m.processed, i)
 	return i, nil
 }
@@ -41,31 +35,8 @@ func (m *mockProcessor[Item]) Process(ctx context.Context, i Item) (Item, error)
 // Cancel collects all inputs that were canceled in m.canceled
 func (m *mockProcessor[Item]) Cancel(i Item, err error) {
 	time.Sleep(m.cancelDuration)
-	m.mu.Lock()
-	defer m.mu.Unlock()
 	m.canceled = append(m.canceled, i)
 	m.errs = append(m.errs, err.Error())
-}
-
-// Processed returns a copy of the processed inputs
-func (m *mockProcessor[Item]) Processed() []Item {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return slices.Clone(m.processed)
-}
-
-// Canceled returns a copy of the canceled inputs
-func (m *mockProcessor[Item]) Canceled() []Item {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return slices.Clone(m.canceled)
-}
-
-// Errs returns a copy of the errors passed to Cancel
-func (m *mockProcessor[Item]) Errs() []string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return slices.Clone(m.errs)
 }
 
 // containsAll returns true if a and b contain all of the same elements
