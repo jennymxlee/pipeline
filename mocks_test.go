@@ -87,3 +87,25 @@ func containsAll[Item comparable](a, b []Item) bool {
 	}
 	return true
 }
+
+// recorder is a Processor that returns err for inputs in failOn and records canceled inputs
+type recorder[In, Out any] struct {
+	process  func(In) Out
+	failOn   func(In) bool
+	err      error
+	canceled []In
+	errs     []error
+}
+
+func (r *recorder[In, Out]) Process(_ context.Context, i In) (Out, error) {
+	var zero Out
+	if r.failOn != nil && r.failOn(i) {
+		return zero, r.err
+	}
+	return r.process(i), nil
+}
+
+func (r *recorder[In, Out]) Cancel(i In, err error) {
+	r.canceled = append(r.canceled, i)
+	r.errs = append(r.errs, err)
+}
