@@ -2,6 +2,8 @@ package pipeline
 
 import (
 	"context"
+	"errors"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -56,4 +58,62 @@ func contains(s []string, e string) bool {
 	}
 
 	return false
+}
+
+func TestApplyErrors(t *testing.T) {
+	t.Parallel()
+
+	errSplit := errors.New("split failed")
+	errUpper := errors.New("upper failed")
+
+	tests := []struct {
+		name              string
+		in                string
+		want              []string
+		wantErr           error
+		wantCanceledSplit []string
+		wantCanceledUpper []string
+	}{
+		{name: "first processor fails", in: "fail", want: []string{}, wantErr: errSplit, wantCanceledSplit: []string{"fail"}},
+		// Items processed before the failure are returned
+		{name: "second processor fails", in: "a,x,b", want: []string{"A"}, wantErr: errUpper, wantCanceledUpper: []string{"x"}},
+		{name: "no errors", in: "a,b", want: []string{"A", "B"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			split := &recorder[string, []string]{
+				process: func(s string) []string { return strings.Split(s, ",") },
+				failOn:  func(s string) bool { return s == "fail" },
+				err:     errSplit,
+			}
+			upper := &recorder[string, string]{
+				process: strings.ToUpper,
+				failOn:  func(s string) bool { return s == "x" },
+				err:     errUpper,
+			}
+			a := Apply[string, string, string](split, upper)
+
+			got, err := a.Process(context.Background(), tt.in)
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("err = %v, want %v", err, tt.wantErr)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+			if !slices.Equal(split.canceled, tt.wantCanceledSplit) {
+				t.Errorf("first processor canceled %v, want %v", split.canceled, tt.wantCanceledSplit)
+			}
+			if !slices.Equal(upper.canceled, tt.wantCanceledUpper) {
+				t.Errorf("second processor canceled %v, want %v", upper.canceled, tt.wantCanceledUpper)
+			}
+
+			// Apply's own Cancel is a no-op
+			a.Cancel(tt.in, errSplit)
+			if len(split.canceled) != len(tt.wantCanceledSplit) || len(upper.canceled) != len(tt.wantCanceledUpper) {
+				t.Error("Apply.Cancel canceled inner processors, want no-op")
+			}
+		})
+	}
 }

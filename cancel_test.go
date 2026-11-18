@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -81,4 +82,32 @@ func TestCancel(t *testing.T) {
 		}
 	}
 
+}
+
+func TestCancelClosesWhenInputCloses(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	out := Cancel(ctx, func(i int, err error) {
+		t.Errorf("cancel(%d, %v) called, want items passed through", i, err)
+	}, Emit(1, 2, 3))
+
+	var got []int
+	timeout := time.After(5 * time.Second)
+	for {
+		select {
+		case i, open := <-out:
+			if !open {
+				if !slices.Equal(got, []int{1, 2, 3}) {
+					t.Fatalf("got %v, want [1 2 3]", got)
+				}
+				return
+			}
+			got = append(got, i)
+		case <-timeout:
+			t.Fatalf("out was not closed after in was closed, got %v", got)
+		}
+	}
 }
