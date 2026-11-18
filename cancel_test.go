@@ -82,3 +82,24 @@ func TestCancel(t *testing.T) {
 	}
 
 }
+
+func TestCancelClosesWhenInputCloses(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	canceled := func(i int, err error) {
+		t.Errorf("canceled %d with %v, want no cancellations", i, err)
+	}
+
+	// With a context that is never canceled, every item passes through and
+	// out closes as soon as in is closed
+	var got []int
+	for i := range Cancel(ctx, canceled, Emit(1, 2, 3)) {
+		got = append(got, i)
+	}
+	if want := []int{1, 2, 3}; !equal(got, want) {
+		t.Errorf("Cancel output = %v, want %v", got, want)
+	}
+}
