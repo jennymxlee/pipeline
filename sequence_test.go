@@ -2,7 +2,9 @@ package pipeline
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"slices"
 	"testing"
 )
 
@@ -46,4 +48,38 @@ func SequenceExample() {
 	// 7
 	// 8
 	// 9
+}
+
+func TestSequenceError(t *testing.T) {
+	t.Parallel()
+
+	wantErr := errors.New("step 2 failed")
+	var calls []string
+	var canceled []int
+	step := func(name string, err error) Processor[int, int] {
+		return NewProcessor(func(_ context.Context, i int) (int, error) {
+			calls = append(calls, name)
+			return i + 1, err
+		}, func(i int, err error) {
+			if err != wantErr {
+				t.Errorf("%s.Cancel err = %v, want %v", name, err, wantErr)
+			}
+			canceled = append(canceled, i)
+		})
+	}
+
+	got, err := Sequence(step("1", nil), step("2", wantErr), step("3", nil)).Process(context.Background(), 10)
+	if err != wantErr {
+		t.Errorf("err = %v, want %v", err, wantErr)
+	}
+	if got != 0 {
+		t.Errorf("output = %d, want 0", got)
+	}
+	// Step 2 is canceled with its own input: the output of step 1
+	if want := []int{11}; !slices.Equal(canceled, want) {
+		t.Errorf("canceled = %v, want %v", canceled, want)
+	}
+	if want := []string{"1", "2"}; !slices.Equal(calls, want) {
+		t.Errorf("calls = %v, want %v", calls, want)
+	}
 }

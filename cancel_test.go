@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -81,4 +82,24 @@ func TestCancel(t *testing.T) {
 		}
 	}
 
+}
+
+func TestCancelPassesEverythingWhenInClosesFirst(t *testing.T) {
+	t.Parallel()
+
+	var canceled []int
+	cancelFunc := func(i int, _ error) {
+		canceled = append(canceled, i)
+	}
+
+	var got []int
+	for i := range Cancel(context.Background(), cancelFunc, Emit(1, 2, 3)) {
+		got = append(got, i)
+	}
+	if want := []int{1, 2, 3}; !slices.Equal(got, want) {
+		t.Errorf("Cancel output = %v, want %v", got, want)
+	}
+	if len(canceled) != 0 {
+		t.Errorf("canceled = %v, want none", canceled)
+	}
 }
